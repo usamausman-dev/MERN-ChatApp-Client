@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { auth } from './utils/FirebaseConfig'
 import { onAuthStateChanged } from "firebase/auth";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Home from './pages/Home'
 import Login from './pages/Login'
+import { GlobalContext } from './context/context'
+import axios from 'axios';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null)
+  const { state, dispatch } = useContext(GlobalContext)
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
@@ -18,6 +21,12 @@ export default function App() {
           photoURL: user.photoURL,
           uid: user.uid
         }
+
+        axios.get(`http://localhost:1234/api/userbyemail/${user.email}`)
+          .then((json) => {
+            dispatch({ type: "SET_USER", payload: json.data.Users })
+          })
+          .catch(err => console.log(err))
 
         setCurrentUser(payload)
 

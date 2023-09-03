@@ -1,14 +1,29 @@
-import React, { Fragment, useState } from 'react'
+import React, { Fragment, useState, useContext } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
+import { GlobalContext } from '../context/context'
+import axios from 'axios'
 
-export default function JoinRoom() {
+export default function JoinRoom({ recallData }) {
     let [isOpen, setIsOpen] = useState(false)
     const [roomName, setRoomName] = useState('')
+    const { state, dispatch } = useContext(GlobalContext)
+
     const joinRoom = (e) => {
         e.preventDefault();
 
-        console.log(roomName)
-        setIsOpen(false)
+        const payload = {
+            name: roomName,
+            user: state.user._id
+        }
+
+        console.log(payload)
+
+        axios.post('http://localhost:1234/api/join-room', payload).then((json) => {
+            console.log(json.data)
+            recallData(json.data.rooms)
+            setIsOpen(false)
+        })
+            .catch(err => console.log(err))
 
     }
     return (

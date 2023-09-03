@@ -1,34 +1,76 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
 import MessagePill from '../components/MessagePill'
 import { BsSendFill } from 'react-icons/bs'
+import { Tab } from '@headlessui/react'
+import { auth } from '../utils/FirebaseConfig'
+import { onAuthStateChanged } from "firebase/auth";
+import axios from 'axios'
+import MessageArea from '../components/MessageArea'
+
 export default function Home() {
+    const [currentUser, setCurrentUser] = useState(null)
+    const [rooms, setRooms] = useState([])
+
+    function classNames(...classes) {
+        return classes.filter(Boolean).join(' ')
+    }
+
+    useEffect(() => {
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                axios.get(`http://localhost:1234/api/userbyemail/${user.email}`)
+                    .then((json) => {
+                        axios.get(`http://localhost:1234/api/room/${json.data.Users._id}`).then((data) => {
+                            setCurrentUser(json.data.Users)
+                            setRooms(data.data.rooms)
+
+                        })
+                            .catch(err => console.log(err))
+
+                    })
+                    .catch(err => console.log(err))
+            }
+            else {
+                setCurrentUser(user)
+            }
+        });
+    }, [])
+
+
+
     return (
         <div className='flex' >
-            <Sidebar />
+            <Tab.Group>
 
-            <div className='p-7 flex-1 h-screen overflow-y-scroll'>
-                <Navbar />
-                <div className="bg-slate-50 h-3/4 overflow-auto p-10 rounded border-2 border-green-100">
+                <Sidebar currentUser={currentUser} rooms={rooms} />
 
-                    <main className="flex">
-                        <section className="container p-4 flex flex-col w-100">
-                            <MessagePill currentUser={true} message={"hello"} user={'Usama'} time={'01:00'} />
-                            <MessagePill currentUser={false} message={"hello"} user={'Usama'} time={'01:00'} />
-                        </section>
-                    </main>
+                <div className='p-7 flex-1 h-screen overflow-y-scroll'>
+                    <Navbar recallData={setRooms} />
 
+                    <Tab.Panels className="mt-2">
 
+                        {
+                            rooms.map((room, key) => (
+                                <Tab.Panel
+                                    key={key}
+                                    className={classNames(
+                                        'rounded-xl bg-white p-3',
+                                        'ring-white ring-opacity-60 ring-offset-2 ring-offset-green-400 focus:outline-none focus:ring-2'
+                                    )}
+                                >
+
+                                    <MessageArea room={room} />
+
+                                </Tab.Panel>
+                            ))
+                        }
+                    </Tab.Panels>
                 </div>
 
-
-
-                <div className="fixed bottom-0 w-[73%] mb-5 flex justify-between">
-                    <textarea id="message" rows="1" className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write your message here..."></textarea>
-                    <button className='bg-slate-900 text-white px-3 ml-4 rounded-full'><BsSendFill /></button>
-                </div>
-            </div>
+            </Tab.Group>
         </div>
     )
 }

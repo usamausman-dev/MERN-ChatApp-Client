@@ -1,21 +1,39 @@
-import React, { Fragment, useState } from 'react'
+import React, { Fragment, useContext, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
+import { GlobalContext } from '../context/context'
+import axios from 'axios'
 
-export default function CreateRoom() {
+export default function CreateRoom({ recallData }) {
     let [isOpen, setIsOpen] = useState(false)
     const [roomName, setRoomName] = useState('')
+    const { state, dispatch } = useContext(GlobalContext)
+
+
+    const openModal = () => {
+
+        setIsOpen(true)
+    }
 
     const makeRoom = (e) => {
         e.preventDefault();
+        const payload =
+        {
+            name: roomName,
+            user: state.user._id
+        }
 
-        console.log(roomName)
-        setIsOpen(false)
+        axios.post('http://localhost:1234/api/create-room', payload).then((json) => {
+
+            recallData(json.data.rooms)
+            setIsOpen(false)
+        })
+
 
     }
 
     return (
         <>
-            <button className="bg-white text-green-500 px-8 py-2 rounded-md" onClick={() => setIsOpen(true)}>Create Room</button>
+            <button className="bg-white text-green-500 px-8 py-2 rounded-md" onClick={openModal}>Create Room</button>
 
             <Transition appear show={isOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-10" onClose={() => setIsOpen(false)}>
